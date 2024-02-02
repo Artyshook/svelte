@@ -1,6 +1,6 @@
 <script>
-	import { writable } from 'svelte/store';
-	import { onMount } from 'svelte';
+	// import { writable } from 'svelte/store';
+	// import { toggledCells } from './CellStore.svelte'; // Import the shared store
 
 	let rows = 18;
 	let cols = 10;
@@ -8,6 +8,12 @@
 	const baseClasses = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600`;
 	const skippedClass = `skipped ${baseClass}`;
 	const clickedClass = `holds ${baseClass} bg-green-400 border-green-400 text-green-900 hover:bg-green-200`;
+
+	import { getContext } from 'svelte';
+	import { SharedDataContext } from '../context.js';
+
+	const sharedData = getContext(SharedDataContext) || { toggledCells: new Set() };
+
 
 	const cellsToSkip = new Set([
 		'B0',
@@ -95,34 +101,50 @@
 		'R8'
 	]);
 
-	const clickedCells = writable(new Set());
-
-
-	onMount(() => {
-		// Получаем текущее значение
-		console.log($clickedCells);
-		// console.log($clickedCellsReadOnly);
-	});
+	//store clicked
+	// const clickedCells = writable(new Set());
 
 	const isSkippedCell = (cellId) => {
 		return cellsToSkip.has(cellId);
 	};
 
-	const toggleCell = (cellId) => {
-		const newClickedCells = new Set($clickedCells);// create new object Set
 
-		if (newClickedCells.has(cellId)) {
-			newClickedCells.delete(cellId);
+	const toggleCell = (cellId) => {
+		const newToggledCells = new Set(sharedData.toggledCells);
+
+		// Toggle the state of the cell
+		if (newToggledCells.has(cellId) || cellsToSkip.has(cellId)) {
+			newToggledCells.delete(cellId);
 		} else {
-			newClickedCells.add(cellId);
+			newToggledCells.add(cellId);
 		}
 
-		clickedCells.set(newClickedCells);
+		sharedData.toggledCells = newToggledCells;
 	};
+
+	// //zakliknuti tlacitka
+	// const toggleCell = (cellId) => {
+	// 	const newClickedCells = new Set($clickedCells);
+	//
+	// 	// Toggle the state of the cell
+	// 	if (newClickedCells.has(cellId) || cellsToSkip.has(cellId)) {
+	// 		newClickedCells.delete(cellId);
+	// 	} else {
+	// 		newClickedCells.add(cellId);
+	// 	}
+	//
+	// 	clickedCells.set(newClickedCells);
+	// };
+
 
 
 	$: tableRows = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i)); // Generuje policka
 	$: tableCols = Array.from({ length: cols }, (_, i) => i);// generuje radky
+
+	//check data
+	$: {
+		console.log(sharedData.toggledCells);
+	}
 </script>
 
 <pre class="my-5">
@@ -160,7 +182,7 @@ Buttons:
 						on:click={() => toggleCell(cellId)}
 						class={isSkippedCell(cellId)
 							? skippedClass
-							: $clickedCells.has(cellId)
+							: sharedData.toggledCells.has(cellId)
 								? clickedClass
 								: baseClasses}
 					>

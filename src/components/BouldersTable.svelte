@@ -1,12 +1,32 @@
 <script>
-	import { writable } from 'svelte/store';
+	// import { writable } from 'svelte/store';
+	//
+	// const boulders = writable([]);
 
-	const boulders = writable([]);
+	import { getContext, onDestroy } from 'svelte';
+	// import { writable } from 'svelte/store';
+	import { SharedDataContext } from '../context.js';
+
+	const sharedData = getContext(SharedDataContext);
+
+	let toggledCells = sharedData?.toggledCells ? [...sharedData.toggledCells] : [];
+
+	console.log(sharedData)
+
+	// Subscribe to changes in the context store's 'toggledCells'
+	const unsubscribe = sharedData.subscribe(value => {
+		toggledCells = value.toggledCells ? [...value.toggledCells] : [];
+	});
+
+	// Cleanup function
+	onDestroy(() => {
+		unsubscribe(); // Unsubscribe when the component is destroyed
+	});
 </script>
 
 List of all generated boulders.
 
-{#if $boulders.length > 0}
+{#if $toggledCells.length > 0}
 	<div id="table-container" class="overflow-x-auto">
 		<table id="dataTable" class="w-full text-left text-sm">
 			<thead class="bg-slate-50 text-xs uppercase text-slate-500">
@@ -17,7 +37,7 @@ List of all generated boulders.
 				</tr>
 			</thead>
 			<tbody>
-				{#each $boulders as boulder (boulder.i)}
+				{#each $toggledCells as boulder (boulder.i)}
 					<tr>
 						<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.i}</td>
 						<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.n}</td>

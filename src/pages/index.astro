@@ -3,6 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import BouldersTable from '../components/BouldersTable.svelte';
 ---
 
+<script context="module">
+	import { setContext } from 'svelte';
+	import { SharedDataContext } from '../context.js';
+	import { writable } from 'svelte/store';
+
+	// Create your context store
+	const sharedData = writable({
+		toggledCells: new Set(),
+	});
+	// Set the context
+	setContext(SharedDataContext, sharedData);
+</script>
+
 <Layout title="Welcome to Astro.">
 	<div class="container mx-auto py-12">
 		<BouldersTable client:load />
