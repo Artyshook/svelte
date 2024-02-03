@@ -1,6 +1,6 @@
 <script>
-	// import { writable } from 'svelte/store';
-	// import { toggledCells } from './CellStore.svelte'; // Import the shared store
+	import {addBoulder, boulders, clickedCells} from '../clickedCells.js';
+
 
 	let rows = 18;
 	let cols = 10;
@@ -8,12 +8,6 @@
 	const baseClasses = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600`;
 	const skippedClass = `skipped ${baseClass}`;
 	const clickedClass = `holds ${baseClass} bg-green-400 border-green-400 text-green-900 hover:bg-green-200`;
-
-	import { getContext } from 'svelte';
-	import { SharedDataContext } from '../context.js';
-
-	const sharedData = getContext(SharedDataContext) || { toggledCells: new Set() };
-
 
 	const cellsToSkip = new Set([
 		'B0',
@@ -101,54 +95,43 @@
 		'R8'
 	]);
 
-	//store clicked
-	// const clickedCells = writable(new Set());
 
 	const isSkippedCell = (cellId) => {
 		return cellsToSkip.has(cellId);
 	};
 
-
 	const toggleCell = (cellId) => {
-		const newToggledCells = new Set(sharedData.toggledCells);
-
-		// Toggle the state of the cell
-		if (newToggledCells.has(cellId) || cellsToSkip.has(cellId)) {
-			newToggledCells.delete(cellId);
-		} else {
-			newToggledCells.add(cellId);
+		if (!isSkippedCell(cellId)) {
+			const newClickedCells = new Set($clickedCells);
+			if (newClickedCells.has(cellId)) {
+				newClickedCells.delete(cellId);
+			} else {
+				newClickedCells.add(cellId);
+			}
+			clickedCells.set(newClickedCells);
 		}
-
-		sharedData.toggledCells = newToggledCells;
 	};
 
-	// //zakliknuti tlacitka
-	// const toggleCell = (cellId) => {
-	// 	const newClickedCells = new Set($clickedCells);
-	//
-	// 	// Toggle the state of the cell
-	// 	if (newClickedCells.has(cellId) || cellsToSkip.has(cellId)) {
-	// 		newClickedCells.delete(cellId);
-	// 	} else {
-	// 		newClickedCells.add(cellId);
-	// 	}
-	//
-	// 	clickedCells.set(newClickedCells);
-	// };
+	const saveBoulder = () => {
+		// Add a new boulder with the current set of clicked cells
+		$: console.log("Clicked Cells:", Array.from($clickedCells));
 
+		addBoulder($clickedCells);
 
+		// Optionally, clear the current clicked cells
+		clickedCells.set(new Set());
+	};
 
-	$: tableRows = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i)); // Generuje policka
-	$: tableCols = Array.from({ length: cols }, (_, i) => i);// generuje radky
+	$: tableRows = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
+	$: tableCols = Array.from({ length: cols }, (_, i) => i);
 
-	//check data
-	$: {
-		console.log(sharedData.toggledCells);
-	}
+	// $: console.log("Clicked Cells:", Array.from($clickedCells));
+	$: console.log("boulder:", $boulders);
+
 </script>
 
 <pre class="my-5">
-Buttons: 
+Buttons:
 - Top" sets the end of the path
 - Start" sets start of path
 - Show" sends data to server, server lights up wall
@@ -158,38 +141,39 @@ Buttons:
 
 <table class="wall table-fixed border-separate mb-6 text-xs sm:text-base">
 	<thead>
-		<tr>
-			<th></th>
-			{#each Array(cols) as _, col (col)}
-				<th
-					class="w-7 h-7 text-center rounded-sm tabular-nums slashed-zero sm:w-8 sm:h-8 text-slate-400"
-					>{col}</th
-				>
-			{/each}
-		</tr>
+	<tr>
+		<th></th>
+		{#each Array(cols) as _, col (col)}
+			<th
+				class="w-7 h-7 text-center rounded-sm tabular-nums slashed-zero sm:w-8 sm:h-8 text-slate-400"
+			>{col}</th
+			>
+		{/each}
+	</tr>
 	</thead>
 	<tbody>
-		{#each tableRows as row, rowIndex}
-			<tr>
-				<th
-					class="w-7 h-7 text-center rounded-sm tabular-nums slashed-zero sm:w-8 sm:h-8 text-slate-400"
-				>
-					{String.fromCharCode(65 + rowIndex)}
-				</th>
-				{#each tableCols as col}
-					{@const cellId = row + col}
-					<td
-						on:click={() => toggleCell(cellId)}
-						class={isSkippedCell(cellId)
+	{#each tableRows as row, rowIndex}
+		<tr>
+			<th
+				class="w-7 h-7 text-center rounded-sm tabular-nums slashed-zero sm:w-8 sm:h-8 text-slate-400"
+			>
+				{String.fromCharCode(65 + rowIndex)}
+			</th>
+			{#each tableCols as col}
+				{@const cellId = row + col}
+				<td
+					class={isSkippedCell(cellId)
 							? skippedClass
-							: sharedData.toggledCells.has(cellId)
+							: $clickedCells.has(cellId)
 								? clickedClass
 								: baseClasses}
-					>
-						{isSkippedCell(cellId) ? '' : cellId}
-					</td>
-				{/each}
-			</tr>
-		{/each}
+					on:click={() => toggleCell(cellId)}
+				>
+					{isSkippedCell(cellId) ? '' : cellId}
+				</td>
+			{/each}
+		</tr>
+	{/each}
+	<button on:click={()=> saveBoulder()}>Save</button>
 	</tbody>
 </table>
