@@ -1,9 +1,18 @@
 <script>
+
+	import { onDestroy } from 'svelte';
+
+	onDestroy(() => {
+		console.log('List of Boulders Component is being destroyed');
+		// Optionally, you can perform cleanup or additional logic here
+	});
+
 	// import { writable } from 'svelte/store';
 	//
 	// const boulders = writable([]);
-	import {boulders} from "../clickedCells.js";
+	import { boulders, clickedCells } from '../clickedCells.js';
 	$: console.log("boulder:", $boulders);
+	$: console.log("cells:", $clickedCells);
 
 </script>
 
@@ -21,9 +30,9 @@ List of all generated boulders.
 			</tr>
 			</thead>
 			<tbody>
-			{#each $boulders as boulder (boulder.i)}
+			{#each $boulders as boulder (boulder.id)}
 				<tr>
-					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.i}</td>
+					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.id}</td>
 					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.n}</td>
 					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.d}</td>
 				</tr>

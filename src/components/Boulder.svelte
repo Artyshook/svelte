@@ -1,6 +1,6 @@
 <script>
-	import {addBoulder, boulders, clickedCells} from '../clickedCells.js';
-
+	import { addBoulder, boulders, clickedCells, selectedStart, selectedTop } from '../clickedCells.js';
+	import { writable } from 'svelte/store';
 
 	let rows = 18;
 	let cols = 10;
@@ -8,6 +8,13 @@
 	const baseClasses = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600`;
 	const skippedClass = `skipped ${baseClass}`;
 	const clickedClass = `holds ${baseClass} bg-green-400 border-green-400 text-green-900 hover:bg-green-200`;
+	const startClass = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-green-400 border-green-400 text-green-900`;
+	const topClass = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-red-400 border-red-400 text-red-900`;
+
+
+	const selectedStartCell = writable();
+	const selectedTopCell = writable();
+	console.log("selectedTopCell",selectedTopCell)
 
 	const cellsToSkip = new Set([
 		'B0',
@@ -95,7 +102,6 @@
 		'R8'
 	]);
 
-
 	const isSkippedCell = (cellId) => {
 		return cellsToSkip.has(cellId);
 	};
@@ -112,8 +118,41 @@
 		}
 	};
 
+	let selectingMode = null;
+
+	const setCandidate = (cellId) => {
+		if (!isSkippedCell(cellId)){
+			if (selectingMode === 'Start') {
+				selectedStart(cellId);
+				// Update selectedStartCell with the new cellId
+				selectedStartCell.set(cellId);
+			} else if (selectingMode === 'Top') {
+				selectedTop(cellId);
+				// Update selectedTopCell with the new cellId
+				selectedTopCell.set(cellId);
+			}
+			setMode(null);
+		}
+	};
+
+	const setMode = (mode) => {
+		selectingMode = mode;
+		console.log(`Selecting ${mode.toLowerCase()}...`);
+	};
+
+	//dopsat
+	const showOnServer = () => {
+		console.log("Show on Server");
+	};
+
+	const clearBoulder = () => {
+		// Logic for clearing set data Boulder
+		console.log("Clear Boulder");
+		clickedCells.set(new Set()); // Clear the set of clicked cells
+		// Implement your additional logic here
+	};
+
 	const saveBoulder = () => {
-		// Add a new boulder with the current set of clicked cells
 		$: console.log("Clicked Cells:", Array.from($clickedCells));
 
 		addBoulder($clickedCells);
@@ -125,9 +164,8 @@
 	$: tableRows = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
 	$: tableCols = Array.from({ length: cols }, (_, i) => i);
 
-	// $: console.log("Clicked Cells:", Array.from($clickedCells));
+	$: console.log("Clicked Cells:", $clickedCells);
 	$: console.log("boulder:", $boulders);
-
 </script>
 
 <pre class="my-5">
@@ -163,17 +201,31 @@ Buttons:
 				{@const cellId = row + col}
 				<td
 					class={isSkippedCell(cellId)
-							? skippedClass
-							: $clickedCells.has(cellId)
-								? clickedClass
-								: baseClasses}
-					on:click={() => toggleCell(cellId)}
+        ? skippedClass
+        : $clickedCells.has(cellId)
+            ? clickedClass
+            : selectingMode === 'Start' && $selectedStartCell === cellId
+                ? 'holds bg-green-500 border-green-500 text-white'  // Change color for Start cell
+                : selectingMode === 'Top' && $selectedTopCell === cellId
+                    ? 'holds bg-red-500 border-red-500 text-white'  // Change color for Top cell
+                    : baseClasses
+}
+					on:click={() => {
+    if (selectingMode) {
+        setCandidate(cellId);
+    } else {
+        toggleCell(cellId);
+    }
+}}
 				>
 					{isSkippedCell(cellId) ? '' : cellId}
 				</td>
 			{/each}
 		</tr>
 	{/each}
-	<button on:click={()=> saveBoulder()}>Save</button>
 	</tbody>
 </table>
+
+<button on:click={() => setMode('Start')}>Start</button>
+<button on:click={() => setMode('Top')}>Top</button>
+<button on:click={()=> saveBoulder()}>>Save</button>
