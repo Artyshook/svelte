@@ -1,6 +1,5 @@
 <script>
 	import { addBoulder, boulders, clickedCells, selectedStart, selectedTop } from '../clickedCells.js';
-	import { writable } from 'svelte/store';
 
 	let rows = 18;
 	let cols = 10;
@@ -8,13 +7,9 @@
 	const baseClasses = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600`;
 	const skippedClass = `skipped ${baseClass}`;
 	const clickedClass = `holds ${baseClass} bg-green-400 border-green-400 text-green-900 hover:bg-green-200`;
-	const startClass = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-green-400 border-green-400 text-green-900`;
-	const topClass = `${baseClass} cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-red-400 border-red-400 text-red-900`;
+	const startClass = `cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-yellow-400 border-green-400 text-green-900`;
+	const topClass = ` cursor-pointer bg-sky-50 border border-sky-300 hover:bg-sky-100 hover:border-sky-400 hover:text-sky-600 bg-red-400 border-red-400 text-red-900`;
 
-
-	const selectedStartCell = writable();
-	const selectedTopCell = writable();
-	console.log("selectedTopCell",selectedTopCell)
 
 	const cellsToSkip = new Set([
 		'B0',
@@ -109,36 +104,37 @@
 	const toggleCell = (cellId) => {
 		if (!isSkippedCell(cellId)) {
 			const newClickedCells = new Set($clickedCells);
-			if (newClickedCells.has(cellId)) {
-				newClickedCells.delete(cellId);
+
+			if (state.selectingMode === 'Start') {
+				state = { ...state, selectedStartCell: cellId};
+				selectedStart(cellId);
+			} else if (state.selectingMode === 'Top') {
+				state.selectedTopCell = cellId;
+				state = { ...state, selectedTopCell: cellId };
 			} else {
-				newClickedCells.add(cellId);
+				if (newClickedCells.has(cellId)) {
+					newClickedCells.delete(cellId);
+				} else {
+					newClickedCells.add(cellId);
+				}
 			}
+
 			clickedCells.set(newClickedCells);
+			state = { ...state, selectingMode: null};
 		}
 	};
 
-	let selectingMode = null;
-
-	const setCandidate = (cellId) => {
-		if (!isSkippedCell(cellId)){
-			if (selectingMode === 'Start') {
-				selectedStart(cellId);
-				// Update selectedStartCell with the new cellId
-				selectedStartCell.set(cellId);
-			} else if (selectingMode === 'Top') {
-				selectedTop(cellId);
-				// Update selectedTopCell with the new cellId
-				selectedTopCell.set(cellId);
-			}
-			setMode(null);
-		}
+	let state = {
+		selectingMode: null,
+		selectedStartCell: null,
+		selectedTopCell: null
 	};
 
 	const setMode = (mode) => {
-		selectingMode = mode;
-		console.log(`Selecting ${mode.toLowerCase()}...`);
+		state = { ...state, selectingMode: mode };
+		console.log(`Selecting ${mode}`);
 	};
+
 
 	//dopsat
 	const showOnServer = () => {
@@ -146,19 +142,12 @@
 	};
 
 	const clearBoulder = () => {
-		// Logic for clearing set data Boulder
-		console.log("Clear Boulder");
-		clickedCells.set(new Set()); // Clear the set of clicked cells
-		// Implement your additional logic here
+		state = { ...state, selectedStartCell: null, selectedTopCell: null};
+		clickedCells.set(new Set());
 	};
 
 	const saveBoulder = () => {
-		$: console.log("Clicked Cells:", Array.from($clickedCells));
-
 		addBoulder($clickedCells);
-
-		// Optionally, clear the current clicked cells
-		clickedCells.set(new Set());
 	};
 
 	$: tableRows = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
@@ -200,23 +189,20 @@ Buttons:
 			{#each tableCols as col}
 				{@const cellId = row + col}
 				<td
-					class={isSkippedCell(cellId)
-        ? skippedClass
-        : $clickedCells.has(cellId)
-            ? clickedClass
-            : selectingMode === 'Start' && $selectedStartCell === cellId
-                ? 'holds bg-green-500 border-green-500 text-white'  // Change color for Start cell
-                : selectingMode === 'Top' && $selectedTopCell === cellId
-                    ? 'holds bg-red-500 border-red-500 text-white'  // Change color for Top cell
-                    : baseClasses
-}
+					class={
+  			state.selectingMode === 'Start' && state.selectedStartCell === cellId || state.selectedStartCell === cellId
+      ? startClass
+      : state.selectingMode === 'Top' && state.selectedTopCell === cellId || state.selectedTopCell === cellId
+      ? topClass
+      : $clickedCells.has(cellId)
+      ? clickedClass
+      : isSkippedCell(cellId)
+      ? skippedClass
+      : baseClasses
+  }
 					on:click={() => {
-    if (selectingMode) {
-        setCandidate(cellId);
-    } else {
-        toggleCell(cellId);
-    }
-}}
+						toggleCell(cellId);
+  }}
 				>
 					{isSkippedCell(cellId) ? '' : cellId}
 				</td>
@@ -228,4 +214,5 @@ Buttons:
 
 <button on:click={() => setMode('Start')}>Start</button>
 <button on:click={() => setMode('Top')}>Top</button>
-<button on:click={()=> saveBoulder()}>>Save</button>
+<button on:click={()=> saveBoulder()}>Save</button>
+<button on:click={()=> clearBoulder()}>Clear</button>

@@ -11,7 +11,7 @@
 	//
 	// const boulders = writable([]);
 	import { boulders, clickedCells } from '../clickedCells.js';
-	$: console.log("boulder:", $boulders);
+	$: console.log("boulder:", $boulders.clickedCells);
 	$: console.log("cells:", $clickedCells);
 
 </script>
@@ -25,17 +25,14 @@ List of all generated boulders.
 			<thead class="bg-slate-50 text-xs uppercase text-slate-500">
 			<tr class="border-b bg-white">
 				<th class="px-3 py-3 lg:px-6 lg:py-3">ID</th>
-				<th class="px-3 py-3 lg:px-6 lg:py-3">Name</th>
-				<th class="px-3 py-3 lg:px-6 lg:py-3">Difficulty</th>
+				<th class="px-3 py-3 lg:px-6 lg:py-3">Cells</th>
 			</tr>
 			</thead>
 			<tbody>
 			{#each $boulders as boulder (boulder.id)}
 				<tr>
 					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.id}</td>
-					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.n}</td>
-					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.d}</td>
-				</tr>
+					<td class="px-3 py-1.5 lg:px-6 lg:py-3">{boulder.clickedCells}</td>
 			{/each}
 			</tbody>
 		</table>

@@ -1,13 +1,14 @@
 import { writable } from 'svelte/store';
 
-export const saveClickedCellsToLocalStorage = (clickedCells) => {
-    try {
-        localStorage.setItem('clickedCells', JSON.stringify(Array.from(clickedCells)));
-        console.log('Clicked cells saved to local storage.');
-    } catch (error) {
-        console.error('Error saving clicked cells to local storage:', error);
-    }
-};
+// export const saveClickedCellsToLocalStorage = (clickedCells) => {
+//     console.log('local sotorage:', clickedCells)
+//     try {
+//         localStorage.setItem('clickedCells', JSON.stringify(Array.from(clickedCells)));
+//         console.log('Clicked cells saved to local storage.');
+//     } catch (error) {
+//         console.error('Error saving clicked cells to local storage:', error);
+//     }
+// };
 
 // Check if localStorage is available, coz of SSR
 const isLocalStorageAvailable = (() => {
@@ -24,6 +25,7 @@ const isLocalStorageAvailable = (() => {
 export const clickedCells = writable(
   isLocalStorageAvailable ? new Set(JSON.parse(localStorage.getItem('clickedCells')) || []) : new Set()
 );
+
 export const boulders = writable(
   isLocalStorageAvailable ? JSON.parse(localStorage.getItem('boulders')) || [] : []
 );
@@ -35,8 +37,11 @@ const generateBoulderId = () => {
 
 export const selectedStart = (cellId) => {
     clickedCells.update((prevClickedCells) => {
+        console.log('prevClickedCells', prevClickedCells)
+        console.log('cellId:', cellId)
         prevClickedCells = new Set([cellId, ...prevClickedCells]);
-        saveClickedCellsToLocalStorage(prevClickedCells);
+        console.log('new clicked cells:', prevClickedCells)
+        // saveClickedCellsToLocalStorage(prevClickedCells);
         return prevClickedCells;
     });
 };
@@ -45,7 +50,7 @@ export const selectedTop = (cellId) => {
     clickedCells.update((prevClickedCells) => {
         prevClickedCells.delete(cellId);
         prevClickedCells = new Set([...prevClickedCells, cellId]);
-        saveClickedCellsToLocalStorage(prevClickedCells);
+        // saveClickedCellsToLocalStorage(prevClickedCells);
         return prevClickedCells;
     });
 };
@@ -57,7 +62,7 @@ export const addBoulder = (clickedCells) => {
             ...prevBoulders,
             {
                 id: generateBoulderId(),
-                clickedCells: new Set(clickedCells),
+                clickedCells: Array.from(clickedCells), // Convert Set to Array
                 pathStart: null,
                 pathEnd: null,
             },
